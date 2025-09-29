@@ -1,0 +1,3 @@
+g++ -std=c++17 -O2 Actividad.cpp SistemaWBS.cpp ArbolGeneral.cpp main.cpp -o wbs
+
+./wbs wbs.txt
