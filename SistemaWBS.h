@@ -28,11 +28,13 @@ public:
     void recalcularAcumulados();
     double costoTotal();
     double tiempoTotal();
-    std::vector<Actividad> caminoHasta(const std::string& idHoja) const;
 
-    unsigned int tamano() const { return arbol_.tamano(); }
-    unsigned int altura() const { return arbol_.altura(); }
-    unsigned int orden()  const { return arbol_.orden(); }
+    // Métodos const llamando a métodos no-const del árbol (solución práctica con const_cast)
+    unsigned int tamano() const { return const_cast<ArbolGeneral<Actividad>&>(arbol_).tamano(); }
+    unsigned int altura() const { return const_cast<ArbolGeneral<Actividad>&>(arbol_).altura(); }
+    unsigned int orden()  const { return const_cast<ArbolGeneral<Actividad>&>(arbol_).orden();  }
+
+    std::vector<Actividad> caminoHasta(const std::string& idHoja) const;
 
 private:
     bool dfsCamino_(const ArbolGeneral<Actividad>& sub, const std::string& objetivo,

@@ -1,6 +1,7 @@
 #include "ArbolGeneral.h"
 #include <queue>
 #include <algorithm>
+#include <stdexcept>   // <-- necesario para std::runtime_error
 
 // ================== Helpers (en archivo de implementación) ==================
 namespace {
@@ -21,7 +22,6 @@ namespace {
         delete n;
     }
 
-    // Busca un puntero al nodo que contiene 'val' (comparando por operator==)
     template <class T>
     NodoGeneral<T>* buscar(NodoGeneral<T>* r, const T& val) {
         if (!r) return nullptr;
@@ -32,7 +32,6 @@ namespace {
         return nullptr;
     }
 
-    // Busca el padre del nodo cuyo info==val; retorna puntero al padre y también un iterador al hijo en su lista
     template <class T>
     bool buscarPadre(NodoGeneral<T>* r, const T& val,
                      NodoGeneral<T>** padreOut, typename std::list<NodoGeneral<T>*>::iterator* itOut) {
@@ -102,7 +101,6 @@ std::list< ArbolGeneral<T> > ArbolGeneral<T>::subArbolN() {
     std::list< ArbolGeneral<T> > lista;
     if (!raiz) return lista;
     for (auto* h : raiz->hijos) {
-        // Se devuelve COPIA para evitar aliasing y dobles delete
         lista.emplace_back(copiarNodo<T>(h));
     }
     return lista;
@@ -139,12 +137,10 @@ ArbolGeneral<T>& ArbolGeneral<T>::operator=(const ArbolGeneral<T>& other) {
 template <class T>
 bool ArbolGeneral<T>::insertarNodo(const T& padre, const T& n) {
     if (!raiz) return false;
-    // Si el padre es la raíz por igualdad de info
     if (raiz->info == padre) {
         raiz->hijos.push_back(new NodoGeneral<T>(n));
         return true;
     }
-    // Buscar el padre en profundidad
     if (NodoGeneral<T>* p = buscar<T>(raiz, padre)) {
         p->hijos.push_back(new NodoGeneral<T>(n));
         return true;
@@ -155,13 +151,11 @@ bool ArbolGeneral<T>::insertarNodo(const T& padre, const T& n) {
 template <class T>
 bool ArbolGeneral<T>::eliminarNodo(const T& n) {
     if (!raiz) return false;
-    // Caso: es la raíz → eliminar todo el árbol
     if (raiz->info == n) {
         destruirNodo<T>(raiz);
         raiz = nullptr;
         return true;
     }
-    // Buscar padre del nodo a eliminar
     NodoGeneral<T>* padre = nullptr;
     typename std::list<NodoGeneral<T>*>::iterator it;
     if (buscarPadre<T>(raiz, n, &padre, &it)) {
@@ -188,8 +182,6 @@ unsigned int ArbolGeneral<T>::orden() {
     return ordenRec<T>(raiz);
 }
 
-// ================== Instanciaciones explícitas (para este taller) ==================
-// Asegura que las plantillas se materialicen para Actividad y vinculen correctamente.
+// ================== Instanciación explícita ==================
 #include "Actividad.h"
 template class ArbolGeneral<Actividad>;
-

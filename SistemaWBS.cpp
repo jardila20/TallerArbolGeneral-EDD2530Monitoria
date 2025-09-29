@@ -1,5 +1,7 @@
 #include "SistemaWBS.h"
+#include <algorithm>
 
+// ------------------- Helpers privados -------------------
 std::string SistemaWBS::padreDeId_(const std::string& id) {
     if (id == "0") return "";
     auto pos = id.rfind('.');
@@ -7,8 +9,11 @@ std::string SistemaWBS::padreDeId_(const std::string& id) {
     return id.substr(0, pos);
 }
 
-bool SistemaWBS::dfsCamino_(const ArbolGeneral<Actividad>& sub, const std::string& objetivo,
+bool SistemaWBS::dfsCamino_(const ArbolGeneral<Actividad>& subC, const std::string& objetivo,
                             std::vector<Actividad>& camino) const {
+    // const_cast porque ArbolGeneral no tiene métodos const
+    auto& sub = const_cast<ArbolGeneral<Actividad>&>(subC);
+
     if (sub.esVacio()) return false;
     Actividad raiz = sub.obtenerRaiz();
     camino.push_back(raiz);
@@ -24,17 +29,20 @@ bool SistemaWBS::dfsCamino_(const ArbolGeneral<Actividad>& sub, const std::strin
 
 std::pair<double,double> SistemaWBS::postordenAcum_(ArbolGeneral<Actividad>& sub) {
     if (sub.esVacio()) return {0.0, 0.0};
+
     std::list< ArbolGeneral<Actividad> > hijos = sub.subArbolN();
     if (hijos.empty()) {
         Actividad a = sub.obtenerRaiz();
         return {a.costo(), a.tiempo()};
     }
+
     double sumaC = 0.0, sumaT = 0.0;
     for (auto& h : hijos) {
         auto par = postordenAcum_(h);
         sumaC += par.first;
         sumaT += par.second;
     }
+
     Actividad a = sub.obtenerRaiz();
     a.fijarCosto(sumaC);
     a.fijarTiempo(sumaT);
@@ -42,41 +50,64 @@ std::pair<double,double> SistemaWBS::postordenAcum_(ArbolGeneral<Actividad>& sub
     return {sumaC, sumaT};
 }
 
+// ------------------- API pública -------------------
 void SistemaWBS::cargarDesdeArchivo(const std::string& ruta) {
     std::ifstream in(ruta);
-    if (!in.is_open()) throw std::runtime_error("No se pudo abrir el archivo");
+    if (!in.is_open()) throw std::runtime_error("No se pudo abrir el archivo: " + ruta);
 
-    arbol_ = ArbolGeneral<Actividad>();
+    arbol_ = ArbolGeneral<Actividad>(); // limpiar
 
     std::string id, desc;
     double costo, tiempo;
     std::vector<Actividad> acts;
+
+    // Formato: id descripcion costo tiempo (descripcion SIN espacios)
     while (in >> id >> desc >> costo >> tiempo) {
         acts.emplace_back(id, desc, costo, tiempo);
     }
 
+    // Insertar raíz
     bool tieneRaiz = false;
     for (const auto& a : acts) {
         if (a.id() == "0") { arbol_ = ArbolGeneral<Actividad>(a); tieneRaiz = true; break; }
     }
-    if (!tieneRaiz) throw std::runtime_error("No hay raiz con id 0");
+    if (!tieneRaiz) throw std::runtime_error("No se encontro la raiz con id \"0\".");
 
-    auto nivelId = [](const std::string& s){ return (s=="0")?0: (int)std::count(s.begin(),s.end(),'.')+1; };
-    std::sort(acts.begin(), acts.end(), [&](auto& a, auto& b){ return nivelId(a.id()) < nivelId(b.id()); });
+    auto nivelId = [](const std::string& s){
+        if (s == "0") return 0;
+        return static_cast<int>(std::count(s.begin(), s.end(), '.')) + 1;
+    };
 
+    std::sort(acts.begin(), acts.end(),
+              [&](const Actividad& a, const Actividad& b){
+                  int na = nivelId(a.id());
+                  int nb = nivelId(b.id());
+                  if (na != nb) return na < nb;
+                  return a.id() < b.id();
+              });
+
+    // Insertar el resto
     for (const auto& a : acts) {
         if (a.id() == "0") continue;
         std::string padre = padreDeId_(a.id());
-        Actividad padreDummy(padre, "PADRE", 0, 0);
+        Actividad padreDummy(padre, "PADRE", 0.0, 0.0);
         if (!arbol_.insertarNodo(padreDummy, a)) {
-            throw std::runtime_error("Error insertando " + a.id());
+            throw std::runtime_error("No se pudo insertar id=" + a.id() + " bajo padre=" + padre);
         }
     }
 }
 
 void SistemaWBS::recalcularAcumulados() { postordenAcum_(arbol_); }
-double SistemaWBS::costoTotal() { return arbol_.esVacio()?0:arbol_.obtenerRaiz().costo(); }
-double SistemaWBS::tiempoTotal() { return arbol_.esVacio()?0:arbol_.obtenerRaiz().tiempo(); }
+
+double SistemaWBS::costoTotal() {
+    if (arbol_.esVacio()) return 0.0;
+    return arbol_.obtenerRaiz().costo();
+}
+
+double SistemaWBS::tiempoTotal() {
+    if (arbol_.esVacio()) return 0.0;
+    return arbol_.obtenerRaiz().tiempo();
+}
 
 std::vector<Actividad> SistemaWBS::caminoHasta(const std::string& idHoja) const {
     std::vector<Actividad> camino;
