@@ -1,0 +1,71 @@
+### TAD ACTIVIDAD
+**Descripción:** abstrae el concepto de actividad dentro de un WBS (proyecto, fase, entregable o tarea elemental), guardando su información básica.
+**Conjunto mínimo de datos:**
+* `id`: cadena de caracteres, identifica la actividad de forma única.
+* `descripcion`: cadena de caracteres, explica la actividad.
+* `costo`: real, valor asociado a la actividad.
+* `tiempo`: real, duración estimada de la actividad.
+**Comportamiento:**
+Operaciones:
+* `crear(id, descripcion, costo, tiempo)`: crea una actividad con los datos dados.
+* `obtenerId()`: retorna el identificador de la actividad.
+* `obtenerDescripcion()`: retorna la descripción de la actividad.
+* `obtenerCosto()`: retorna el costo de la actividad.
+* `obtenerTiempo()`: retorna el tiempo de la actividad.
+* `fijarDescripcion(descripcion)`: cambia la descripción de la actividad.
+* `fijarCosto(costo)`: cambia el costo de la actividad.
+* `fijarTiempo(tiempo)`: cambia el tiempo de la actividad.
+
+
+
+### TAD NODO
+**Descripción:** abstrae el concepto de nodo en un árbol general, que almacena una actividad y referencia a sus hijos.
+**Conjunto mínimo de datos:**
+* `info`: Actividad, información que guarda el nodo.
+* `hijos`: lista de nodos, contiene los hijos del nodo actual.
+**Comportamiento:**
+Operaciones:
+* `crearNodo(info)`: crea un nodo con la actividad dada.
+* `obtenerInfo()`: retorna la actividad almacenada en el nodo.
+* `fijarInfo(info)`: cambia la actividad del nodo.
+* `numHijos()`: retorna el número de hijos del nodo.
+* `hijo(i)`: retorna el hijo en la posición `i`.
+* `agregarHijo(nodo)`: agrega un hijo al nodo.
+* `esHoja()`: retorna verdadero si el nodo no tiene hijos.
+
+
+
+### TAD ÁRBOL GENERAL
+**Descripción:** abstrae el concepto de árbol general aplicado a un WBS, compuesto de nodos con actividades.
+**Conjunto mínimo de datos:**
+* `raiz`: nodo, nodo principal del árbol.
+**Comportamiento:**
+Operaciones:
+* `crear()`: crea un árbol vacío.
+* `crearConRaiz(info)`: crea un árbol con la actividad en la raíz.
+* `esVacio()`: retorna verdadero si el árbol no tiene raíz.
+* `obtenerRaiz()`: retorna la actividad en la raíz.
+* `fijarRaiz(info)`: cambia la información en la raíz.
+* `insertarNodo(padre, info)`: agrega un nuevo nodo como hijo de `padre`.
+* `eliminarNodo(info)`: elimina el nodo con esa actividad y su subárbol.
+* `tamano()`: retorna el número de nodos en el árbol.
+* `altura()`: retorna la altura del árbol.
+* `orden()`: retorna el máximo número de hijos que tiene un nodo.
+* `subArbolN()`: retorna la lista de subárboles hijos de la raíz.
+
+
+
+### TAD SISTEMA WBS
+**Descripción:** abstrae el sistema de gestión del WBS, que se encarga de construir el árbol desde un archivo y calcular información de costos, tiempos y caminos.
+**Conjunto mínimo de datos:**
+* `arbol`: ArbolGeneral, representa el WBS completo.
+**Comportamiento:**
+Operaciones:
+* `cargarDesdeArchivo(ruta)`: crea el WBS a partir del archivo de texto.
+* `recalcularAcumulados()`: recalcula el costo y tiempo de los nodos intermedios sumando los de sus hijos.
+* `costoTotal()`: retorna el costo total del proyecto (raíz).
+* `tiempoTotal()`: retorna el tiempo total del proyecto (raíz).
+* `caminoHasta(id)`: retorna la secuencia de actividades desde la raíz hasta la actividad con ese id.
+* `tamano()`: retorna el número de actividades del WBS.
+* `altura()`: retorna la altura del WBS.
+* `orden()`: retorna el máximo número de hijos en el WBS.
